@@ -1,29 +1,57 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./SharedWallet.sol";
+contract Wallet {
+    address owner;
+    mapping(address => uint) public members; // address => remaining limit
 
-contract Wallet is SharedWallet {
-    event MoneyWithdrawn(address indexed _to, uint _amount);
-    event MoneyReceived(address indexed _from, uint _amount);
+    event MoneyWithdrawn(address indexed to, uint amount);
+    event MoneyReceived(address indexed from, uint amount);
 
-    function getBalance() public view returns(uint) {
+    modifier onlyOwner() {
+        require(owner == msg.sender, "not an owner");
+        _;
+    }
+
+    modifier ownerOrMember(uint amount) {
+        require(owner == msg.sender || members[msg.sender] >= amount, "can't withdraw");
+        _;
+    }
+
+    constructor() {
+        owner = msg.sender;
+    }
+
+    function addLimit(address _member, uint _limit) public onlyOwner {
+        members[_member] = _limit;
+    }
+
+    function getBalance() public view returns (uint) {
         return address(this).balance;
     }
 
-    function withdrawMoney(uint _amount) external ownerLimits(_amount) {
-        require(_amount <= getBalance(), "Not enough funds");
-        if(!isOwner()) { 
-            cutTheBalance(msg.sender, _amount); 
+    function withdrawMoney(uint amount) public ownerOrMember(amount) {
+        require(amount <= address(this).balance, "Not enough funds to withdraw!");
+        if (owner != msg.sender) {
+            reduceTheLimit(msg.sender, amount);
         }
+        address payable _to = payable(msg.sender);
+        _to.transfer(amount);
 
-        payable(msg.sender).transfer(_amount);
+        emit MoneyWithdrawn(_to, amount);
+    }
 
-        emit MoneyWithdrawn(msg.sender, _amount);
+    function reduceTheLimit(address _member, uint amount) internal {
+        members[_member] -= amount;
+    }
+
+    function deleteFromMembers(address _member) public onlyOwner {
+        delete members[_member];
     }
 
     fallback() external payable {}
-    receive() external payable{
+
+    receive() external payable {
         emit MoneyReceived(msg.sender, msg.value);
     }
 }
