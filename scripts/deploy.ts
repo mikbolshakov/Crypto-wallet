@@ -1,18 +1,19 @@
-import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { DeployFunction } from "hardhat-deploy/dist/types";
+import { ethers } from "hardhat";
 import "hardhat-deploy";
 import "hardhat-deploy-ethers";
 
-const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
-  const { deployments, getNamedAccounts } = hre;
-  const { deploy } = deployments;
-  const { deployer } = await getNamedAccounts();
+async function main() {
+  const Wallet = await ethers.getContractFactory("Wallet");
+  const wallet = await Wallet.deploy();
+  const [deployer] = await ethers.getSigners();
+  
+  await wallet.deployed();
 
-  await deploy("Wallet", {
-    from: deployer,
-    log: true,
-  });
-};
+  console.log(`Wallet deployed to ${wallet.address} with the account: ${await deployer.getAddress()}`);
+  console.log("Account balance:", (await deployer.getBalance()).toString());
+}
 
-export default func;
-func.tags = ["Wallet"];
+main().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});
