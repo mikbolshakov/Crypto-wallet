@@ -22,6 +22,8 @@ contract Wallet {
         owner = msg.sender;
     }
 
+    function payMoney() public payable {}
+
     function addLimit(address _member, uint _limit) public onlyOwner {
         members[_member] = _limit;
     }

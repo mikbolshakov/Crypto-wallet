@@ -2,6 +2,16 @@ import { ethers } from "hardhat";
 import "hardhat-deploy";
 import "hardhat-deploy-ethers";
 
+/* 
+networks: {
+        goerli: {
+            url: process.env.GOERLI,
+            accounts: [<string>process.env.GOERLI_PRIVKEY],
+        },
+    },
+    */
+  
+    
 async function main() {
   const Wallet = await ethers.getContractFactory("Wallet");
   const wallet = await Wallet.deploy();
