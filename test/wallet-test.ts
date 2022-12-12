@@ -1,6 +1,5 @@
 import { expect } from "chai";
-import { ethers, deployments, getNamedAccounts } from "hardhat";
-import { Wallet } from "../typechain-types";
+import { ethers } from "hardhat";
 import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
 
 describe("Wallet", function () {
@@ -21,21 +20,23 @@ describe("Wallet", function () {
     const payTx = await wallet.connect(deployer).payMoney({value: ethers.utils.parseEther("1.0")});
     await payTx.wait();
 
-    console.log(await wallet.getBalance());
+    expect(await wallet.getBalance()).to.equal(ethers.utils.parseEther("1.0"));
 
     const limitTx = await wallet.connect(deployer).addLimit(user.address, 1000000);
     await limitTx.wait();
 
-    console.log(await wallet.members[user.address]);
+    expect(await wallet.members(user.address)).to.equal(1000000);
   
-    const withdrawTx = await wallet.connect(user).withdrawMoney(500000);
-    await expect(() => withdrawTx).to.changeEtherBalance(user, +500000);
+    const withdrawTx = await wallet.connect(user).withdrawMoney(700000);
+    await expect(withdrawTx).to.changeEtherBalance(user, +700000);
     await withdrawTx.wait();
 
-    console.log(await wallet.members[user.address]);
+    expect(await wallet.members(user.address)).to.equal(300000);
   
     const delTX = await wallet.connect(deployer).deleteFromMembers(user.address);
     await delTX.wait();
+
+    expect(await wallet.members(user.address)).to.equal(0);
   })
 })
 
